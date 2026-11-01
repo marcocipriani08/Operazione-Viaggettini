@@ -122,7 +122,7 @@ button:focus-visible { outline: 2px solid var(--lemon); outline-offset: 2px; }
 #sd-title { margin: 0; font-size: 18px; color: var(--lemon); text-wrap: balance; }
 #sd-level { font-size: 12px; color: var(--ink-dim); letter-spacing: .04em; }
 .sd-meta { text-align: right; font-family: var(--f-num); font-size: 14px; color: var(--ink-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
-#sd-grid { width: min(100%, 460px, 62vh); aspect-ratio: 1; display: grid; grid-template-columns: repeat(9, 1fr); background: var(--ink); border: 3px solid var(--ink); border-radius: 6px; gap: 1px; overflow: hidden; }
+#sd-grid { width: min(100%, 460px, 62vh); aspect-ratio: 1; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, minmax(0, 1fr)); background: var(--ink); border: 3px solid var(--ink); border-radius: 6px; gap: 1px; overflow: hidden; }
 #sd-grid.win { animation: win .6s ease 2; }
 @keyframes win { 50% { box-shadow: 0 0 0 6px var(--lemon); } }
 .sd-cell { border: 0; padding: 0; background: #fffaf0; color: #1f5fd1; font-family: var(--f-num); font-size: clamp(21px, 6.8vw, 32px); font-variant-numeric: lining-nums tabular-nums; display: grid; place-items: center; position: relative; min-width: 0; }
