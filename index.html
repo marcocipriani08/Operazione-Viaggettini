@@ -2172,7 +2172,7 @@ const TICKETS = [
 ];
 
 
-const PUZZLES = [{"p":"000190803005870600010250004840000307000000000709000065900062080002089400406031000","s":"274196853395874612618253974841625397563917248729348165937462581152789436486531729"},{"p":"000500920080006000000001063003850400407000205002017300320700000000600030094005000","s":"136574928285396741749281563963852417417963285852417396321748659578629134694135872"},{"p":"074050900000103005500000014080009500000000000006200030320000006700906000005070290","s":"174658923892143675563792814281439567937561482456287139329815746748926351615374298"},{"p":"100080960008000000005006801003075000400000008000290400502900100000000300039020006","s":"174382965368519724925746831283475619497631258651298473542963187716854392839127546"},{"p":"000600009000090130008700600020006805300000001504100070006001700031060000400002000","s":"753614289642598137918723654127346895389275461564189372896451723231967548475832916"},{"p":"009600040700000090060209058004062000000000000000190200190705060030000001070001500","s":"259678143748513692361249758514362987923857416687194235192785364435926871876431529"},{"p":"017000000300800000000620010900050006508000102400090007030075000000006009000000420","s":"617549238342817965895623714921758346578364192463192857239475681184236579756981423"},{"p":"700500234000000700020009006091006000000000000000700920100600080005000000436001007","s":"719568234863124759524379816291846375357912648648753921172695483985437162436281597"}];
+const PUZZLES = [{"p":"074190803005870600010250004840000307000010000709000065900062080002089400406031720","s":"274196853395874612618253974841625397563917248729348165937462581152789436486531729"},{"p":"006500920285306000000001063003850400407060205002017300320700000000609134094005800","s":"136574928285396741749281563963852417417963285852417396321748659578629134694135872"},{"p":"074650900000103005500000014080039500000000000006280030320000006700906000005074290","s":"174658923892143675563792814281439567937561482456287139329815746748926351615374298"},{"p":"100080960008010000005006801003075600400000008001290400502900100000050300039020006","s":"174382965368519724925746831283475619497631258651298473542963187716854392839127546"},{"p":"000600009600090130008700600020006805300000001504100070006001700031060008400002000","s":"753614289642598137918723654127346895389275461564189372896451723231967548475832916"},{"p":"009600040700000090060209058004062007000000000600190200190705060030000001070001500","s":"259678143748513692361249758514362987923857416687194235192785364435926871876431529"},{"p":"017500000300800000000620010900050006508000102400090007030075000000006009000001420","s":"617549238342817965895623714921758346578364192463192857239475681184236579756981423"},{"p":"700500234000000700020009006091006000000010000000700920100600080005000000436001007","s":"719568234863124759524379816291846375357912648648753921172695483985437162436281597"}];
 
 // ===== Chiptune music & sound effects (WebAudio, generated) =====
 const Audio = (() => {
@@ -2351,11 +2351,8 @@ const Sudoku = (() => {
   }
   function save() { store.prog[pk] = { v: vals.join(''), n: notes.slice(), p: cur.p }; persist(); }
   function select(i) { sel = i; hintArm = 0; render(); Audio.sfx('tap'); }
-  function conflicts(i) {
-    const v = vals[i]; if (!v) return false; const r = Math.floor(i / 9), c = i % 9;
-    for (let j = 0; j < 81; j++) { if (j === i || vals[j] !== v) continue; const r2 = Math.floor(j / 9), c2 = j % 9; if (r2 === r || c2 === c || (Math.floor(r2 / 3) === Math.floor(r / 3) && Math.floor(c2 / 3) === Math.floor(c / 3))) return true; }
-    return false;
-  }
+  // A number is wrong as soon as it differs from the solution (given cells are never wrong)
+  function wrong(i) { return puz[i] === 0 && vals[i] !== 0 && String(vals[i]) !== cur.s[i]; }
   function input(n) {
     if (done) return;
     if (sel < 0) { msg('Prima tocca una casella.'); return; }
@@ -2363,6 +2360,7 @@ const Sudoku = (() => {
     if (noteMode) { notes[sel] ^= (1 << n); if (vals[sel]) vals[sel] = 0; }
     else {
       vals[sel] = vals[sel] === n ? 0 : n; notes[sel] = 0;
+      if (vals[sel] && wrong(sel)) { Audio.sfx('error'); msg((n === 1 || n === 8 ? 'L\'' : 'Il ') + n + ' qui non va.'); save(); render(); return; }
       if (vals[sel]) { // clear this number from notes in peers
         const r = Math.floor(sel / 9), c = sel % 9;
         for (let j = 0; j < 81; j++) { const r2 = Math.floor(j / 9), c2 = j % 9; if (r2 === r || c2 === c || (Math.floor(r2 / 3) === Math.floor(r / 3) && Math.floor(c2 / 3) === Math.floor(c / 3))) notes[j] &= ~(1 << n); }
@@ -2401,14 +2399,14 @@ const Sudoku = (() => {
   function render() {
     const cells = el('sd-grid').children;
     const sv = sel >= 0 ? vals[sel] : 0; const sr = Math.floor(sel / 9), sc = sel % 9;
-    const counts = Array(10).fill(0); for (let i = 0; i < 81; i++) if (vals[i]) counts[vals[i]]++;
+    const counts = Array(10).fill(0); for (let i = 0; i < 81; i++) if (vals[i] && !wrong(i)) counts[vals[i]]++;
     for (let i = 0; i < 81; i++) {
       const c = cells[i]; const r = Math.floor(i / 9), q = i % 9;
       c.classList.toggle('given', puz[i] !== 0);
       c.classList.toggle('sel', i === sel);
       c.classList.toggle('peer', sel >= 0 && i !== sel && (r === sr || q === sc || (Math.floor(r / 3) === Math.floor(sr / 3) && Math.floor(q / 3) === Math.floor(sc / 3))));
       c.classList.toggle('same', sv > 0 && vals[i] === sv && i !== sel);
-      c.classList.toggle('bad', conflicts(i));
+      c.classList.toggle('bad', wrong(i));
       if (vals[i]) c.innerHTML = '<b>' + vals[i] + '</b>';
       else if (notes[i]) { let h = '<i class="nt">'; for (let n = 1; n <= 9; n++) h += '<em>' + (notes[i] & (1 << n) ? n : '') + '</em>'; c.innerHTML = h + '</i>'; }
       else c.innerHTML = '';
@@ -2422,12 +2420,15 @@ const Sudoku = (() => {
     build(); cur = p; pk = key; free = isFree; idx = typeof key === 'number' ? key : 0; gateId = gid; done = false; noteMode = false; sel = -1; hintArm = 0;
     puz = p.p.split('').map(Number);
     let pr = store.prog[key];
-    if (pr && (pr.p ? pr.p !== p.p : key === 7)) pr = null;   // progress made on a grid that is no longer this one
+    // Progress made on an older grid is kept when that grid has the same solution (the v36 grids only add givens); otherwise it is dropped
+    const sameSol = q => q.length === 81 && q.split('').every((d, k) => d === '0' || d === p.s[k]);
+    if (pr && (pr.p ? pr.p !== p.p && !sameSol(pr.p) : key === 7)) pr = null;
     vals = pr && pr.v ? pr.v.split('').map(Number) : puz.slice();
     for (let k = 0; k < 81; k++) if (puz[k]) vals[k] = puz[k];
     notes = pr && pr.n ? pr.n.slice() : Array(81).fill(0);
+    for (let k = 0; k < 81; k++) if (puz[k]) notes[k] = 0;
     el('sd-title').textContent = title; el('sd-level').textContent = level;
-    msg(key === 0 ? 'Tocca una casella, poi un numero. «Note» serve per segnare i candidati.' : isFree ? 'Esci quando vuoi: il sudoku ti aspetta qui.' : 'I progressi restano salvati anche se esci.');
+    msg(key === 0 ? 'Tocca una casella, poi un numero. Se il numero è sbagliato diventa rosso. «Note» serve per segnare i candidati.' : isFree ? 'Esci quando vuoi: il sudoku ti aspetta qui.' : 'I progressi restano salvati anche se esci.');
     el('sd-hint').textContent = isFree ? 'Aiuto del Crocco' : 'Aiuto · −1 Salamino'; el('sd-hint').classList.remove('armed');
     el('sd-exit').textContent = isFree ? 'Esci (resta salvato)' : 'Esci (si salva)';
     render(); el('sudoku').hidden = false; G.ui++; G.sudokuOpen = true;
@@ -2448,7 +2449,7 @@ const Sudoku = (() => {
     reset() { store = { prog: {}, solved: {} }; persist(); },
     open(i, title, gid) {
       if (store.solved[gid]) return Promise.resolve(true);
-      return start(PUZZLES[i], i, false, title, 'Sudoku ' + (i + 1) + ' di ' + PUZZLES.length + ' · ' + (i < 2 ? 'riscaldamento' : i < 5 ? 'tosto' : i < 7 ? 'molto tosto' : 'il più tosto'), gid);
+      return start(PUZZLES[i], i, false, title, 'Sudoku ' + (i + 1) + ' di ' + PUZZLES.length + ' · ' + (i < 2 ? 'facile' : i < 4 ? 'difficile' : i < 6 ? 'esperto' : i < 7 ? 'master' : 'master, il più tosto'), gid);
     },
     // The endless sudoku of the games table: one puzzle at a time, kept until it is solved
     freeSaved() { return store.free || null; },
